@@ -1,0 +1,156 @@
+Program.Sub.ScreenSU.Start
+Gui.frmShipDays..Create
+Gui.frmShipDays..Caption("Ship Days")
+Gui.frmShipDays..Size(3015,2580)
+Gui.frmShipDays..MinX(0)
+Gui.frmShipDays..MinY(0)
+Gui.frmShipDays..Position(0,0)
+Gui.frmShipDays..BackColor(-2147483633)
+Gui.frmShipDays..MaxButton(False)
+Gui.frmShipDays..MousePointer(0)
+Gui.frmShipDays..Sizeable(False)
+Gui.frmShipDays..Event(UnLoad,frmShipDays_UnLoad)
+Gui.frmShipDays..MinButton(False)
+Gui.frmShipDays.txtCust.Create(TextBox,"",True,1635,300,0,75,330,True,0,"Arial",8,-2147483643,1)
+Gui.frmShipDays.txtCust.Locked(True)
+Gui.frmShipDays.lblCust.Create(Label,"Customer",True,1650,255,0,75,120,True,0,"Arial",8,-2147483633,0)
+Gui.frmShipDays.cmdCustBrw.Create(Button)
+Gui.frmShipDays.cmdCustBrw.Size(375,375)
+Gui.frmShipDays.cmdCustBrw.Position(1740,285)
+Gui.frmShipDays.cmdCustBrw.Caption("^")
+Gui.frmShipDays.cmdCustBrw.Event(Click,cmdCustBrw_Click)
+Gui.frmShipDays.lblCustName.Create(Label,"Customer Name",True,1935,255,0,75,705,True,0,"Arial",8,-2147483633,0)
+Gui.frmShipDays.txtCustName.Create(TextBox,"",True,2775,300,0,75,915,True,0,"Arial",8,-2147483643,1)
+Gui.frmShipDays.txtCustName.Locked(True)
+Gui.frmShipDays.lblShipDays.Create(Label,"Ship Days",True,1935,255,0,75,1290,True,0,"Arial",8,-2147483633,0)
+Gui.frmShipDays.txtShipDays.Create(TextBox,"",True,840,300,0,75,1500,True,0,"Arial",8,-2147483643,1)
+Gui.frmShipDays.cmdUpdate.Create(Button)
+Gui.frmShipDays.cmdUpdate.Size(855,375)
+Gui.frmShipDays.cmdUpdate.Position(1995,1830)
+Gui.frmShipDays.cmdUpdate.Caption("Update")
+Gui.frmShipDays.cmdUpdate.Event(Click,cmdUpdate_Click)
+Gui.frmProgressBar..Create
+Gui.frmProgressBar..Size(5535,765)
+Gui.frmProgressBar..MinX(5535)
+Gui.frmProgressBar..MinY(765)
+Gui.frmProgressBar..Position(0,0)
+Gui.frmProgressBar..BackColor(-2147483633)
+Gui.frmProgressBar..MousePointer(0)
+Gui.frmProgressBar..MaxButton(False)
+Gui.frmProgressBar..MinButton(False)
+Gui.frmProgressBar..Moveable(False)
+Gui.frmProgressBar..Sizeable(False)
+Gui.frmProgressBar..Caption("Status")
+Gui.frmProgressBar..Event(UnLoad,frmProgressBar_UnLoad)
+Gui.frmProgressBar.progressBar1.Create(ProgressBar)
+Gui.frmProgressBar.progressBar1.Size(5355,405)
+Gui.frmProgressBar.progressBar1.Position(30,15)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+	V.Global.sCustNo.Declare
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+	V.Local.sIcon.Declare
+	
+	F.Intrinsic.String.Build("{0}\GAB\GAS\gss2.ico",V.Caller.PluginsDir,v.Local.sIcon)
+	Gui.frmShipDays..Icon(V.Local.sIcon)
+	Gui.frmProgressBar..Icon(V.Local.sIcon)
+	
+	Gui.frmShipDays..Show
+Program.Sub.Main.End
+
+Program.Sub.frmShipDays_UnLoad.Start
+	F.Intrinsic.Control.End
+Program.Sub.frmShipDays_UnLoad.End
+
+Program.Sub.cmdCustBrw_Click.Start
+	V.Local.sRet.Declare
+	
+	F.ODBC.Connection!con.OpenCompanyConnection(300)
+	F.Intrinsic.UI.Browser(205,"",V.Local.sRet)
+	F.ODBC.Connection!con.Close
+	F.Intrinsic.Control.If(V.Local.sRet,<>,"***CANCEL***")
+		F.Intrinsic.String.Split(V.Local.sRet,"*!*",V.Local.sRet)
+		V.Global.sCustNo.Set(V.Local.sRet(0).Trim)
+		Gui.frmShipDays.txtCust.Text(V.Global.sCustNo)
+		Gui.frmShipDays.txtCustName.Text(V.Local.sRet(1).Trim)
+	F.Intrinsic.Control.EndIf
+Program.Sub.cmdCustBrw_Click.End
+
+Program.Sub.cmdUpdate_Click.Start
+	F.Intrinsic.Control.If(V.Screen.frmShipDays!txtCust.Text,<>,"")
+		F.Intrinsic.Control.AndIf(V.Screen.frmShipDays!txtShipDays.Text,<>,"")
+			Gui.frmProgressBar..Show
+			F.ODBC.Connection!con.OpenCompanyConnection(500)
+			F.Intrinsic.Control.CallSub(Backup_SO_Files)
+			F.Intrinsic.Control.CallSub(Update_Dates)
+			F.ODBC.Connection!con.Close
+			F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndIf
+Program.Sub.cmdUpdate_Click.End
+
+Program.Sub.Backup_SO_Files.Start
+	V.Local.sCopyFileFrom.Declare
+	V.Local.sCopyFileTo.Declare
+	
+	'OENTY
+	F.Intrinsic.String.Build("{0}\OENTY{1}",V.Caller.FilesDir,V.Caller.CompanyCode,V.Local.sCopyFileFrom)
+	F.Intrinsic.String.Build("{0}\OENTY{1}_{2}_{3}",V.Caller.FilesDir,V.Caller.CompanyCode,V.Ambient.Date.FormatMMDDYY,V.Ambient.Time.FormatHHNN,V.Local.sCopyFileTo)
+	F.Intrinsic.File.CopyOpenFile(V.Local.sCopyFileFrom,V.Local.sCopyFileTo)
+	'OESCD
+	F.Intrinsic.String.Build("{0}\OESCD{1}",V.Caller.FilesDir,V.Caller.CompanyCode,V.Local.sCopyFileFrom)
+	F.Intrinsic.String.Build("{0}\OESCD{1}_{2}_{3}",V.Caller.FilesDir,V.Caller.CompanyCode,V.Ambient.Date.FormatMMDDYY,V.Ambient.Time.FormatHHNN,V.Local.sCopyFileTo)
+	F.Intrinsic.File.CopyOpenFile(V.Local.sCopyFileFrom,V.Local.sCopyFileTo)
+Program.Sub.Backup_SO_Files.End
+
+Program.Sub.Update_Dates.Start
+	V.Local.sSQL.Declare
+	V.Local.iCnt.Declare
+	V.Local.iCnt2.Declare
+	V.Local.iShipDays.Declare
+	V.Local.dShipDate.Declare
+	V.Local.dCustDueDate.Declare
+	
+	V.Local.iShipDays.Set(V.Screen.frmShipDays!txtShipDays.Text)
+	
+	F.Intrinsic.String.Build("Select Distinct A.Order_No,A.Record_No,A.Customer,Case When Flag_Use_Mqd = '' Then 'N' Else Flag_Use_Mqd End As Flag_Use_Mqd,Must_Dlvr_By_Date From V_Order_Lines A Left Join V_OE_Ship_Sched B On A.Order_No = B.Order_No And A.Record_No = B.Order_Line Where Case When Flag_Use_Mqd = 'Y' Then Cust_Due_Date Else Must_Dlvr_By_Date End <> '1900-01-01' And Customer = '{0}' Order By A.Order_No,A.Record_No;",V.Global.sCustNo,V.Local.sSQL)
+	F.Data.DataTable.CreateFromSQL("dtOrders","con",V.Local.sSQL,True)
+	
+	Gui.frmProgressBar.progressBar1.Min(0)
+	F.Intrinsic.Control.If(V.DataTable.dtOrders.RowCount,=,0)
+		Gui.frmProgressBar.progressBar1.Max(100)
+	F.Intrinsic.Control.Else
+		Gui.frmProgressBar.progressBar1.Max(V.DataTable.dtOrders.RowCount)
+	F.Intrinsic.Control.EndIf
+	
+	F.Intrinsic.Control.For(V.Local.iCnt,0,V.DataTable.dtOrders.RowCount--,1)
+		Gui.frmProgressBar.progressBar1.Value(V.Local.iCnt)
+		F.Intrinsic.Control.If(V.DataTable.dtOrders(V.Local.iCnt).Flag_Use_Mqd!FieldValTrim,=,"N")
+			F.Intrinsic.Control.If(V.DataTable.dtOrders(V.Local.iCnt).Must_Dlvr_By_Date!FieldValIsNull,=,False)
+				'Update Order_Lines
+				F.Intrinsic.Date.DateSubtractWorkdays(V.DataTable.dtOrders(V.Local.iCnt).Must_Dlvr_By_Date!FieldVal,V.Local.iShipDays,V.Local.dShipDate)
+				F.Intrinsic.String.Build("Update Order_Lines Set Date_Item_Prom = '{0}', Item_Promise_Dt = '{1}' Where Customer = '{2}' And Order_No = '{3}' And Record_No = '{4}';",V.Local.dShipDate.FormatYYYYMMDD,V.Local.dShipDate.FormatMMDDYY,V.DataTable.dtOrders(V.Local.iCnt).Customer!FieldValTrim,V.DataTable.dtOrders(V.Local.iCnt).Order_No!FieldValTrim,V.DataTable.dtOrders(V.Local.iCnt).Record_No!FieldValTrim,V.Local.sSQL)
+				F.ODBC.Connection!con.Execute(V.Local.sSQL)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.Else
+			'Update OE_Ship_Sched
+			F.Intrinsic.String.Build("Select * From OE_Ship_Sched Where Order_No = '{0}' And Order_Line = '{1}' And Date_Due <> '99991231';",V.DataTable.dtOrders(V.Local.iCnt).Order_No!FieldValTrim,V.DataTable.dtOrders(V.Local.iCnt).Record_No!FieldValTrim,V.Local.sSQL)
+			F.Data.DataTable.CreateFromSQL("dtShipSched","con",V.Local.sSQL,True)
+			F.Intrinsic.Control.For(V.Local.iCnt2,0,V.DataTable.dtShipSched.RowCount--,1)
+				F.Intrinsic.Date.ConvertDString(V.DataTable.dtShipSched(V.Local.iCnt2).Cust_Due_Date!FieldVal,"YYYYMMDD",V.Local.dCustDueDate)
+				F.Intrinsic.Date.DateSubtractWorkdays(V.Local.dCustDueDate,V.Local.iShipDays,V.Local.dShipDate)
+				F.Data.DataTable.SetValue("dtShipSched",V.Local.iCnt2,"DATE_DUE",V.Local.dShipDate.FormatYYYYMMDD)
+			F.Intrinsic.Control.Next(V.Local.iCnt2)
+			F.Intrinsic.String.Build("Delete From OE_Ship_Sched Where Order_No = '{0}' And Order_Line = '{1}';",V.DataTable.dtOrders(V.Local.iCnt).Order_No!FieldValTrim,V.DataTable.dtOrders(V.Local.iCnt).Record_No!FieldValTrim,V.Local.sSQL)
+			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+			F.Data.DataTable.SaveToDB("dtShipSched","con","OE_SHIP_SCHED","ORDER_NO*!*ORDER_LINE*!*DATE_DUE",256)
+			f.Data.DataTable.Close("dtShipSched")
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iCnt)
+Program.Sub.Update_Dates.End
+
+Program.Sub.frmProgressBar_UnLoad.Start
+	Gui.frmShipDays..Show
+Program.Sub.frmProgressBar_UnLoad.End
